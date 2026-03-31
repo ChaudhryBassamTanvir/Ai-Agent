@@ -2,12 +2,17 @@ from slack_bolt import App
 from services.intent_detector import detect_intent
 from db.database import create_task
 from services.ai_model import generate_reply
+from slack_bolt import App
+from dotenv import load_dotenv
+import os
 
-app = App(token="YOUR_SLACK_BOT_TOKEN")
+load_dotenv()
+
+app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 
 @app.message("")
 def handle_message(message, say):
-    text = message["text"]
+    text = message.get("text", "")
 
     intent = detect_intent(text)
 
