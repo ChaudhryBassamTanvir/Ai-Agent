@@ -1,13 +1,16 @@
 def detect_intent(message: str):
-    msg = message.lower()
+    message = message.lower()
 
-    if any(word in msg for word in ["price", "cost", "charges"]):
+    if any(word in message for word in ["hi", "hello", "hey"]):
+        return "greeting"
+
+    elif any(word in message for word in ["price", "cost", "budget"]):
         return "pricing"
 
-    if any(word in msg for word in ["build", "create", "develop"]):
+    elif any(word in message for word in ["build", "create", "develop", "task", "project"]):
         return "task"
 
-    if any(word in msg for word in ["hello", "hi"]):
-        return "greeting"
+    elif any(word in message for word in ["invoice", "bill", "payment"]):
+        return "billing"
 
     return "general"

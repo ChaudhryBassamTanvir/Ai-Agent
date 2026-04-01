@@ -1,10 +1,7 @@
 from slack_bolt import App
-from services.intent_detector import detect_intent
-from db.database import create_task
-from services.ai_model import generate_reply
-from slack_bolt import App
 from dotenv import load_dotenv
 import os
+from services.langchain_agent import run_agent
 
 load_dotenv()
 
@@ -14,18 +11,10 @@ app = App(token=os.getenv("SLACK_BOT_TOKEN"))
 def handle_message(message, say):
     text = message.get("text", "")
 
-    intent = detect_intent(text)
+    if not text:
+        say("⚠️ Please send a message")
+        return
 
-    if intent == "greeting":
-        say("Hello! 👋 How can I help you?")
+    response = run_agent(text)
 
-    elif intent == "pricing":
-        say("💰 Pricing depends on your project. Please share details.")
-
-    elif intent == "task":
-        create_task(text)
-        say("✅ Task created and saved!")
-
-    else:
-        reply = generate_reply(text)
-        say(reply)
+    say(response)

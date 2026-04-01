@@ -13,3 +13,13 @@ CREATE TABLE IF NOT EXISTS tasks (
 def create_task(desc):
     cursor.execute("INSERT INTO tasks (description) VALUES (?)", (desc,))
     conn.commit()
+
+TASKS = []
+
+def create_task(description: str):
+    task = {
+        "id": len(TASKS) + 1,
+        "description": description
+    }
+    TASKS.append(task)
+    print("New Task:", task)
