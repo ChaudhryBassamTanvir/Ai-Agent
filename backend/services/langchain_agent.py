@@ -32,7 +32,9 @@ agent = create_agent(
 You can:
 - Answer client queries
 - Create tasks if user asks for project/work
-Always be helpful and professional."""
+Always be helpful and professional.
+- If he ask for any country capital response him tell the capital, don't reply to any other irrelevant question
+"""
 )
 
 def run_agent(message: str) -> str:
