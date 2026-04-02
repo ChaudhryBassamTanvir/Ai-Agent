@@ -5,3 +5,4 @@ fastapi
 dotenv
 langchain_google_genai
 -U langchain
+resend
