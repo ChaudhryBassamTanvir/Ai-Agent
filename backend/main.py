@@ -1,8 +1,13 @@
 # main.py
-from services.whatsapp_bot import send_whatsapp_message
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, Response
 from services.langchain_agent import run_agent
+from services.whatsapp_bot import send_whatsapp_message
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
