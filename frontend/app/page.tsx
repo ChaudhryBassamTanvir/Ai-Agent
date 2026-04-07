@@ -1,54 +1,26 @@
-"use client"
-import { useState } from "react";
+import Link from "next/link"
 
-export default function Chat() {
-  const [msg, setMsg] = useState("");
-  const [chat, setChat] = useState<string[]>([]);
-
-const sendMessage = async () => {
-  if (!msg) return;
-
-  const res = await fetch("http://127.0.0.1:8000/chat", {
-    method: "POST",
-    body: JSON.stringify({ message: msg }),
-    headers: { "Content-Type": "application/json" }
-  });
-
-  const data = await res.json();
-
-  setChat((prev) => [
-    ...prev,
-    "You: " + msg,
-    "AI: " + data.response,
-    data.task ? "📌 Task: " + data.task : ""
-  ]);
-
-  setMsg("");
-};
-
+export default function Home() {
   return (
-    <div className="p-10">
-      <h1 className="text-2xl mb-4">AI Agent</h1>
-
-      <div className="flex gap-2 mb-4">
-        <input
-          className="border p-2 w-full"
-          value={msg}
-          onChange={(e) => setMsg(e.target.value)}
-        />
-        <button
-          onClick={sendMessage}
-          className="bg-blue-500 text-white px-4"
-        >
-          Send
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        {chat.map((c, i) => (
-          <p key={i}>{c}</p>
-        ))}
+    <div style={{ 
+      display: "flex", alignItems: "center", justifyContent: "center", 
+      minHeight: "100vh", flexDirection: "column", gap: "24px" 
+    }}>
+      <h1 style={{ fontSize: "28px", fontWeight: "500", letterSpacing: "-0.5px" }}>
+        AI Agent
+      </h1>
+      <p style={{ color: "#888", fontSize: "15px" }}>Client management powered by AI</p>
+      <div style={{ display: "flex", gap: "12px" }}>
+        <Link href="/chat" style={{
+          padding: "10px 24px", background: "#1a1a1a", color: "#fff",
+          borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: "500"
+        }}>Open Chat</Link>
+        <Link href="/dashboard" style={{
+          padding: "10px 24px", background: "#fff", color: "#1a1a1a",
+          border: "0.5px solid #e0e0e0", borderRadius: "8px", 
+          textDecoration: "none", fontSize: "14px"
+        }}>Dashboard</Link>
       </div>
     </div>
-  );
+  )
 }

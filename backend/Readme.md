@@ -4,6 +4,7 @@ pip install langchain-google-genai python-dotenv
 
 python test_trello_card.py
 pip install resend
+ngrok http 8000
 
 winget install --id Cloudflare.cloudflared
 
