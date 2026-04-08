@@ -7,6 +7,13 @@ from services.langchain_agent import run_agent
 from services.whatsapp_bot import send_whatsapp_message
 from dotenv import load_dotenv
 from db.database import get_all_tasks  # make sure this function exists
+from db.database import (
+    init_db, get_all_tasks, get_all_clients,
+    get_dashboard_stats, update_task_status
+)
+
+# Initialize DB on startup
+init_db()
 
 load_dotenv()
 
@@ -86,3 +93,16 @@ async def whatsapp_webhook(request: Request):
 @app.get("/tasks")
 async def get_tasks():
     return get_all_tasks()
+
+@app.get("/clients")
+async def get_clients():
+    return get_all_clients()
+
+@app.get("/stats")
+async def get_stats():
+    return get_dashboard_stats()
+
+@app.patch("/tasks/{task_id}")
+async def update_task(task_id: int, data: dict):
+    update_task_status(task_id, data.get("status", "pending"))
+    return {"success": True}
