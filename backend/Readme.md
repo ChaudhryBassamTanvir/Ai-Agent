@@ -61,3 +61,8 @@ npm run dev
 2. Your App → WhatsApp → Configuration
 3. Edit Webhook → paste new Cloudflare URL
 4. Click Verify and Save
+
+
+
+
+pip install psycopg2-binary sqlalchemy

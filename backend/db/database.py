@@ -1,25 +1,174 @@
-import sqlite3
+# db/database.py
 
-conn = sqlite3.connect("data.db", check_same_thread=False)
-cursor = conn.cursor()
+import os
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from dotenv import load_dotenv
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    description TEXT
-)
-""")
+load_dotenv()
 
-def create_task(desc):
-    cursor.execute("INSERT INTO tasks (description) VALUES (?)", (desc,))
-    conn.commit()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-TASKS = []
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
 
-def create_task(description: str):
-    task = {
-        "id": len(TASKS) + 1,
-        "description": description
-    }
-    TASKS.append(task)
-    print("New Task:", task)
+# ============================
+# 📦 MODELS
+# ============================
+
+class Client(Base):
+    __tablename__ = "clients"
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    name            = Column(String(100), nullable=False)
+    email           = Column(String(100))
+    phone           = Column(String(30))
+    company         = Column(String(100))
+    channel         = Column(String(20))  # slack / whatsapp / web
+    created_at      = Column(DateTime, default=datetime.utcnow)
+    tasks           = relationship("Task", back_populates="client")
+    messages        = relationship("Message", back_populates="client")
+
+class Task(Base):
+    __tablename__ = "tasks"
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    description     = Column(Text, nullable=False)
+    status          = Column(String(20), default="pending")   # pending / in_progress / done
+    trello_url      = Column(String(255))
+    client_id       = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    created_at      = Column(DateTime, default=datetime.utcnow)
+    client          = relationship("Client", back_populates="tasks")
+
+class Message(Base):
+    __tablename__ = "messages"
+    id              = Column(Integer, primary_key=True, autoincrement=True)
+    client_id       = Column(Integer, ForeignKey("clients.id"), nullable=True)
+    role            = Column(String(10))   # user / ai
+    content         = Column(Text)
+    channel         = Column(String(20))  # slack / whatsapp / web
+    created_at      = Column(DateTime, default=datetime.utcnow)
+    client          = relationship("Client", back_populates="messages")
+
+# ============================
+# 🔧 INIT DB
+# ============================
+
+def init_db():
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created")
+
+# ============================
+# 📝 TASK FUNCTIONS
+# ============================
+
+def create_task(description: str, trello_url: str = "", client_id: int = None):
+    db = SessionLocal()
+    try:
+        task = Task(
+            description=description,
+            trello_url=trello_url,
+            client_id=client_id,
+            status="pending"
+        )
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        print(f"✅ Task saved to DB: {task.id}")
+        return task
+    finally:
+        db.close()
+
+def get_all_tasks():
+    db = SessionLocal()
+    try:
+        tasks = db.query(Task).order_by(Task.created_at.desc()).all()
+        return [
+            {
+                "id": t.id,
+                "description": t.description,
+                "status": t.status,
+                "trello_url": t.trello_url,
+                "client": t.client.name if t.client else "Unknown",
+                "created_at": t.created_at.strftime("%b %d, %Y %H:%M") if t.created_at else ""
+            }
+            for t in tasks
+        ]
+    finally:
+        db.close()
+
+def update_task_status(task_id: int, status: str):
+    db = SessionLocal()
+    try:
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if task:
+            task.status = status
+            db.commit()
+    finally:
+        db.close()
+
+# ============================
+# 👤 CLIENT FUNCTIONS
+# ============================
+
+def get_or_create_client(name: str, channel: str, phone: str = "", email: str = ""):
+    db = SessionLocal()
+    try:
+        client = db.query(Client).filter(Client.phone == phone, Client.channel == channel).first()
+        if not client:
+            client = Client(name=name, phone=phone, channel=channel, email=email)
+            db.add(client)
+            db.commit()
+            db.refresh(client)
+        return client.id
+    finally:
+        db.close()
+
+def get_all_clients():
+    db = SessionLocal()
+    try:
+        clients = db.query(Client).order_by(Client.created_at.desc()).all()
+        return [
+            {
+                "id": c.id,
+                "name": c.name,
+                "email": c.email or "",
+                "phone": c.phone or "",
+                "company": c.company or "",
+                "channel": c.channel,
+                "task_count": len(c.tasks),
+                "created_at": c.created_at.strftime("%b %d, %Y") if c.created_at else ""
+            }
+            for c in clients
+        ]
+    finally:
+        db.close()
+
+# ============================
+# 💬 MESSAGE FUNCTIONS
+# ============================
+
+def save_message(role: str, content: str, channel: str, client_id: int = None):
+    db = SessionLocal()
+    try:
+        msg = Message(role=role, content=content, channel=channel, client_id=client_id)
+        db.add(msg)
+        db.commit()
+    finally:
+        db.close()
+
+def get_dashboard_stats():
+    db = SessionLocal()
+    try:
+        total_tasks    = db.query(Task).count()
+        total_clients  = db.query(Client).count()
+        pending_tasks  = db.query(Task).filter(Task.status == "pending").count()
+        done_tasks     = db.query(Task).filter(Task.status == "done").count()
+        return {
+            "total_tasks": total_tasks,
+            "total_clients": total_clients,
+            "pending_tasks": pending_tasks,
+            "done_tasks": done_tasks
+        }
+    finally:
+        db.close()

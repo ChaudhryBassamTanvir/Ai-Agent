@@ -6,6 +6,7 @@ from fastapi.responses import PlainTextResponse, Response
 from services.langchain_agent import run_agent
 from services.whatsapp_bot import send_whatsapp_message
 from dotenv import load_dotenv
+from db.database import get_all_tasks  # make sure this function exists
 
 load_dotenv()
 
@@ -80,3 +81,8 @@ async def whatsapp_webhook(request: Request):
         print(f"❌ WhatsApp webhook error: {e}")
 
     return {"status": "ok"}
+
+
+@app.get("/tasks")
+async def get_tasks():
+    return get_all_tasks()
