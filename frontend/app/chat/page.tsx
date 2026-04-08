@@ -32,7 +32,7 @@ export default function ChatPage() {
       const res = await fetch("http://127.0.0.1:8000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg }),
+        body: JSON.stringify({ message: userMsg, user_id: "web_user", channel: "web" }),
       })
       const data = await res.json()
       const reply = data.response || "Sorry, something went wrong."

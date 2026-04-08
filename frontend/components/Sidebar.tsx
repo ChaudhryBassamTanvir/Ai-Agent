@@ -1,14 +1,15 @@
 "use client"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { MessageSquare, LayoutDashboard } from "lucide-react"
+import { usePathname }  from "next/navigation";
+import { MessageSquare, LayoutDashboard, Users } from "lucide-react"
 
 export default function Sidebar() {
   const path = usePathname()
 
   const links = [
-    { href: "/chat", label: "Chat", icon: MessageSquare },
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/clients",   label: "Clients",   icon: Users },
+    { href: "/chat",      label: "AI Chat",      icon: MessageSquare },
   ]
 
   return (
@@ -18,8 +19,8 @@ export default function Sidebar() {
       flexDirection: "column", height: "100vh", position: "fixed", left: 0, top: 0
     }}>
       <div style={{ padding: "20px", borderBottom: "0.5px solid #e8e8e6" }}>
-        <div style={{ fontSize: "15px", fontWeight: "500", letterSpacing: "-0.3px" }}>AI Agent</div>
-        <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>Client management</div>
+        <div style={{ fontSize: "15px", fontWeight: "500", letterSpacing: "-0.3px" }}>DS Technologies</div>
+        <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>Agent Dashboard</div>
       </div>
 
       <nav style={{ padding: "12px", flex: 1 }}>

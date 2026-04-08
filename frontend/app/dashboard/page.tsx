@@ -85,6 +85,13 @@ export default function DashboardPage() {
     fetchAll()
   }, [])
 
+useEffect(() => {
+  fetchAll()
+  const interval = setInterval(fetchAll, 30000) // refresh every 30s
+  return () => clearInterval(interval)
+}, [])
+
+
   const updateStatus = async (id: number, status: string) => {
     await fetch(`http://127.0.0.1:8000/tasks/${id}`, {
       method: "PATCH",
