@@ -22,6 +22,10 @@ Update Callback URL to:
 ```bash
 cloudflared tunnel --url http://localhost:8000
 ```
+
+
+ngrok http 8000 --url exanthematic-reynalda-untamely.ngrok-free.dev
+
 Copy the `https://xxxx.trycloudflare.com` URL
 Update it in Meta Dashboard → WhatsApp → Configuration → Webhook → Edit
 
