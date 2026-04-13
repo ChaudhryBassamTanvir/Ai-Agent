@@ -22,7 +22,7 @@ export default function Home() {
         <p className="mt-4 text-gray-500 max-w-xl text-base">
           Automate client communication, task creation, and billing with a powerful AI agent built using LangChain and Ollama.
         </p>
-
+  
         {/* Buttons */}
         <div className="mt-8 flex gap-4">
           <Link
