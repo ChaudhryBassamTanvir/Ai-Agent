@@ -6,3 +6,5 @@ dotenv
 langchain_google_genai
 -U langchain
 resend
+sqlalchemy
+psycopg2-binary

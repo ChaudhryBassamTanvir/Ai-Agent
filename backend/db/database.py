@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from dotenv import load_dotenv
 
@@ -17,6 +17,16 @@ Base = declarative_base()
 # ============================
 # 📦 MODELS
 # ============================
+
+class Admin(Base):
+    __tablename__ = "admins"
+    id          = Column(Integer, primary_key=True, autoincrement=True)
+    name        = Column(String(100), nullable=False)
+    email       = Column(String(100), unique=True, nullable=False)
+    password    = Column(String(255), nullable=False)   # store hashed in prod
+    is_active   = Column(Boolean, default=True)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+
 
 class Client(Base):
     __tablename__ = "clients"
@@ -58,6 +68,20 @@ class Message(Base):
 def init_db():
     Base.metadata.create_all(bind=engine)
     print("✅ Database tables created")
+
+# ============================
+# 🔐 ADMIN FUNCTIONS
+# ============================
+
+def get_admin_by_email(email: str):
+    db = SessionLocal()
+    try:
+        admin = db.query(Admin).filter(Admin.email == email, Admin.is_active == True).first()
+        if admin:
+            return {"id": admin.id, "name": admin.name, "email": admin.email, "password": admin.password}
+        return None
+    finally:
+        db.close()
 
 # ============================
 # 📝 TASK FUNCTIONS
@@ -112,7 +136,6 @@ def update_task_status(task_id: int, status: str):
 def update_task_status_by_trello_url(trello_url: str, status: str):
     db = SessionLocal()
     try:
-        # Match by partial URL since Trello sends short links
         tasks = db.query(Task).all()
         for task in tasks:
             if task.trello_url and trello_url in task.trello_url:
@@ -132,7 +155,6 @@ def update_task_status_by_trello_url(trello_url: str, status: str):
 def get_or_create_client(name: str, channel: str, phone: str = "", email: str = "", slack_id: str = ""):
     db = SessionLocal()
     try:
-        # Find existing client by slack_id or phone
         if channel == "slack" and slack_id:
             client = db.query(Client).filter(Client.slack_id == slack_id).first()
         else:
@@ -147,7 +169,6 @@ def get_or_create_client(name: str, channel: str, phone: str = "", email: str = 
             db.commit()
             db.refresh(client)
         else:
-            # Update name/email if they provided it this time
             if name and name != "Unknown":
                 client.name  = name
                 client.email = email or client.email
@@ -172,7 +193,7 @@ def get_all_clients():
                 "task_count":      len(c.tasks),
                 "created_at":      c.created_at.strftime("%b %d, %Y") if c.created_at else "",
                 "whatsapp_number": c.phone if c.channel == "whatsapp" else "",
-                "slack_id":        c.slack_id or "",   # ✅ real Slack ID now
+                "slack_id":        c.slack_id or "",
             }
             for c in clients
         ]
@@ -205,52 +226,6 @@ def get_dashboard_stats():
             "pending_tasks": pending_tasks,
             "done_tasks": done_tasks
         }
-    finally:
-        db.close()
-
-def get_all_clients():
-    db = SessionLocal()
-    try:
-        clients = db.query(Client).order_by(Client.created_at.desc()).all()
-        return [
-            {
-                "id":         c.id,
-                "name":       c.name,
-                "email":      c.email or "",
-                "phone":      c.phone or "",
-                "company":    c.company or "",
-                "channel":    c.channel,
-                "task_count": len(c.tasks),
-                "created_at": c.created_at.strftime("%b %d, %Y") if c.created_at else "",
-                # Channel-specific fields
-                "whatsapp_number": c.phone if c.channel == "whatsapp" else "",
-                "slack_id":        c.phone if c.channel == "slack" else "",  
-                # "slack_id": c.slack_id or "",
-                # "whatsapp_number": c.phone if c.channel == "whatsapp" else "",
-            }
-            for c in clients
-        ]
-    finally:
-        db.close()
-
-# Add to Client model in database.py
-slack_id = Column(String(50))  # stores Slack user ID
-
-# Update get_or_create_client
-def get_or_create_client(name: str, channel: str, phone: str = "", email: str = "", slack_id: str = ""):
-    db = SessionLocal()
-    try:
-        if channel == "slack":
-            client = db.query(Client).filter(Client.slack_id == slack_id).first()
-        else:
-            client = db.query(Client).filter(Client.phone == phone, Client.channel == channel).first()
-
-        if not client:
-            client = Client(name=name, phone=phone, channel=channel, email=email, slack_id=slack_id)
-            db.add(client)
-            db.commit()
-            db.refresh(client)
-        return client.id
     finally:
         db.close()
 

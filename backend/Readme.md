@@ -3,7 +3,6 @@ uvicorn main:app --reload
 pip install langchain-google-genai python-dotenv
 python register_trello_webhook.py
 python test_trello_card.py
-pip install resend
 ngrok http 8000
 
 winget install --id Cloudflare.cloudflared
@@ -67,6 +66,5 @@ npm run dev
 4. Click Verify and Save
 
 
-
-
-pip install psycopg2-binary sqlalchemy
+Email → admin@dstech.io
+Password → dstech@2024

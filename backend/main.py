@@ -17,12 +17,15 @@ from db.database import (
 )
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse, Response
+from api.routes.auth import router as auth_router
+
 # Initialize DB on startup
 init_db()
 
 load_dotenv()
 
 app = FastAPI()
+app.include_router(auth_router)   # ← adds POST /auth/login
 
 app.add_middleware(
     CORSMiddleware,
