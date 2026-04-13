@@ -18,7 +18,8 @@ from db.database import (
 from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse, Response
 from api.routes.auth import router as auth_router
-
+from services.email_service import send_status_update_email
+from db.database import get_task_with_client
 # Initialize DB on startup
 init_db()
 
@@ -120,21 +121,26 @@ from services.trello_service import move_trello_card
 async def update_task(task_id: int, data: dict):
     new_status = data.get("status", "pending")
 
-    # 1. Update in DB
+    # 1. Update DB
     update_task_status(task_id, new_status)
 
-    # 2. Get Trello URL for this task
+    # 2. Sync Trello
     trello_url = get_task_trello_url(task_id)
-
-    # 3. Move card on Trello
     if trello_url:
         move_trello_card(trello_url, new_status)
-        print(f"✅ Task {task_id} → {new_status} synced to Trello")
-    else:
-        print(f"⚠️ Task {task_id} has no Trello URL")
+
+    # 3. Email client about status change
+    task = get_task_with_client(task_id)
+    if task and task.get("client_email"):
+        send_status_update_email(
+            client_name=task["client_name"],
+            client_email=task["client_email"],
+            task_description=task["description"],
+            new_status=new_status,
+            trello_url=task.get("trello_url", "")
+        )
 
     return {"success": True}
-
 
 @app.get("/clients")
 async def get_clients():
@@ -145,45 +151,46 @@ async def get_clients():
 @app.post("/trello/webhook")
 async def trello_webhook(request: Request):
     try:
-        data = await request.json()
-        action = data.get("action", {})
-        action_type = action.get("type")
-
-        # Only handle card updates
-        if action_type != "updateCard":
+        data       = await request.json()
+        action     = data.get("action", {})
+        if action.get("type") != "updateCard":
             return {"status": "ignored"}
-
-        card_data = action.get("data", {})
-        card = card_data.get("card", {})
+        card_data  = action.get("data", {})
+        card       = card_data.get("card", {})
         list_after = card_data.get("listAfter", {})
-
         if not list_after:
             return {"status": "no list change"}
-
-        card_short_url = f"https://trello.com/c/{card.get('shortLink', '')}"
-        list_name = list_after.get("name", "").lower()
-
-        print(f"📋 Trello card moved to: {list_name} | {card_short_url}")
-
-        # Map Trello list name to our status
-        status_map = {
-            "to do":       "pending",
-            "doing":       "in_progress",
-            "in progress": "in_progress",
-            "done":        "done",
-            "completed":   "done",
-        }
+        card_url   = f"https://trello.com/c/{card.get('shortLink', '')}"
+        list_name  = list_after.get("name", "").lower()
+        status_map = {"to do": "pending", "doing": "in_progress", "in progress": "in_progress", "done": "done"}
         new_status = status_map.get(list_name)
-
         if new_status:
-            update_task_status_by_trello_url(card_short_url, new_status)
-            print(f"✅ Task status updated to: {new_status}")
+            # Update DB
+            update_task_status_by_trello_url(card_url, new_status)
+
+            # ✅ Email client about Trello status change too
+            from db.database import SessionLocal, Task, Client
+            db = SessionLocal()
+            try:
+                tasks = db.query(Task).all()
+                for task in tasks:
+                    if task.trello_url and card_url in task.trello_url:
+                        client = db.query(Client).filter(Client.id == task.client_id).first() if task.client_id else None
+                        if client and client.email:
+                            send_status_update_email(
+                                client_name=client.name,
+                                client_email=client.email,
+                                task_description=task.description,
+                                new_status=new_status,
+                                trello_url=task.trello_url
+                            )
+                        break
+            finally:
+                db.close()
 
     except Exception as e:
         print(f"❌ Trello webhook error: {e}")
-
     return {"status": "ok"}
-
 # Trello needs GET verification too
 @app.get("/trello/webhook")
 async def trello_webhook_verify():

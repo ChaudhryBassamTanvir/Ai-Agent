@@ -236,3 +236,23 @@ def get_task_trello_url(task_id: int) -> str:
         return task.trello_url if task else ""
     finally:
         db.close()
+
+
+
+def get_task_with_client(task_id: int):
+    db = SessionLocal()
+    try:
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return None
+        client = db.query(Client).filter(Client.id == task.client_id).first() if task.client_id else None
+        return {
+            "id":          task.id,
+            "description": task.description,
+            "status":      task.status,
+            "trello_url":  task.trello_url,
+            "client_name":  client.name  if client else "Client",
+            "client_email": client.email if client else "",
+        }
+    finally:
+        db.close()
