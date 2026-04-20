@@ -256,3 +256,54 @@ def get_task_with_client(task_id: int):
         }
     finally:
         db.close()
+
+
+def delete_client(client_id: int):
+    db = SessionLocal()
+    try:
+        db.query(Message).filter(Message.client_id == client_id).delete()
+        db.query(Task).filter(Task.client_id == client_id).delete()
+        db.query(Client).filter(Client.id == client_id).delete()
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Delete client error: {e}")
+        return False
+    finally:
+        db.close()
+
+def add_client_manual(name: str, email: str, phone: str, company: str,
+                       channel: str, university: str = "", target_country: str = "",
+                       cgpa: str = "", degree: str = ""):
+    db = SessionLocal()
+    try:
+        client = Client(
+            name=name, email=email, phone=phone,
+            company=company, channel=channel,
+            created_at=datetime.utcnow()
+        )
+        db.add(client)
+        db.commit()
+        db.refresh(client)
+        return client.id
+    finally:
+        db.close()
+
+def get_task_with_client(task_id: int):
+    db = SessionLocal()
+    try:
+        task   = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return None
+        client = db.query(Client).filter(Client.id == task.client_id).first() if task.client_id else None
+        return {
+            "id":           task.id,
+            "description":  task.description,
+            "status":       task.status,
+            "trello_url":   task.trello_url,
+            "client_name":  client.name  if client else "Client",
+            "client_email": client.email if client else "",
+        }
+    finally:
+        db.close()

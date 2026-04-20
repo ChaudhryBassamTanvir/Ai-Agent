@@ -46,97 +46,109 @@ export default function ChatPage() {
   }
 
   return (
-    <div style={{ display: "flex" }}>
-      <Sidebar />
-      <main style={{ marginLeft: "220px", flex: 1, display: "flex", flexDirection: "column", height: "100vh" }}>
-        
-        {/* Header */}
-        <div style={{ padding: "16px 28px", borderBottom: "0.5px solid #e8e8e6", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff" }}>
-          <div>
-            <div style={{ fontSize: "14px", fontWeight: "500" }}>Client Chat</div>
-            <div style={{ fontSize: "11px", color: "#999" }}>AI Agent is online</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#22c55e" }} />
-            <span style={{ fontSize: "11px", color: "#999" }}>Connected</span>
-          </div>
-        </div>
+<div className="flex">
+  <Sidebar />
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: "16px", background: "#fff" }}>
-          {messages.map((msg, i) => (
-            <div key={i}>
-              {msg.isTask && (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: "8px",
-                  padding: "8px 14px", background: "#f0fdf4",
-                  border: "0.5px solid #bbf7d0", borderRadius: "8px", marginBottom: "8px"
-                }}>
-                  <span style={{ fontSize: "12px", color: "#15803d", fontWeight: "500" }}>
-                    Task created in Trello · Team notified on Slack
-                  </span>
-                </div>
-              )}
-              <div style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start", gap: "10px", alignItems: "flex-start" }}>
-                {msg.role === "ai" && (
-                  <div style={{
-                    width: "28px", height: "28px", borderRadius: "50%",
-                    background: "#f3f4f6", border: "0.5px solid #e8e8e6",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "10px", fontWeight: "500", color: "#666", flexShrink: 0
-                  }}>AI</div>
-                )}
-                <div style={{
-                  maxWidth: "68%",
-                  background: msg.role === "user" ? "#1a1a1a" : "#f9f9f8",
-                  border: msg.role === "user" ? "none" : "0.5px solid #e8e8e6",
-                  borderRadius: msg.role === "user" ? "12px 0 12px 12px" : "0 12px 12px 12px",
-                  padding: "10px 14px",
-                  fontSize: "13px",
-                  color: msg.role === "user" ? "#fff" : "#1a1a1a",
-                  lineHeight: "1.7",
-                  whiteSpace: "pre-wrap"
-                }}>
-                  {msg.content}
-                </div>
-              </div>
-            </div>
-          ))}
-          {loading && (
-            <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
-              <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "#f3f4f6", border: "0.5px solid #e8e8e6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#666" }}>AI</div>
-              <div style={{ background: "#f9f9f8", border: "0.5px solid #e8e8e6", borderRadius: "0 12px 12px 12px", padding: "12px 16px", fontSize: "13px", color: "#999" }}>Thinking...</div>
+  <main className="ml-[220px] flex flex-col flex-1 h-screen">
+
+    {/* Header */}
+    <div className="px-7 py-4 border-b border-[#e8e8e6] flex items-center justify-between bg-white">
+      <div>
+        <div className="text-sm font-medium">Client Chat</div>
+        <div className="text-[11px] text-[#999]">AI Agent is online</div>
+      </div>
+
+      <div className="flex items-center gap-[6px]">
+        <div className="w-[7px] h-[7px] rounded-full bg-[#22c55e]" />
+        <span className="text-[11px] text-[#999]">Connected</span>
+      </div>
+    </div>
+
+    {/* Messages */}
+    <div className="flex-1 overflow-y-auto px-7 py-6 flex flex-col gap-4 bg-white">
+
+      {messages.map((msg, i) => (
+        <div key={i}>
+
+          {msg.isTask && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#f0fdf4] border border-[#bbf7d0] rounded-lg mb-2">
+              <span className="text-xs text-[#15803d] font-medium">
+                Task created in Trello · Team notified on Slack
+              </span>
             </div>
           )}
-          <div ref={bottomRef} />
-        </div>
 
-        {/* Input */}
-        <div style={{ padding: "16px 28px", borderTop: "0.5px solid #e8e8e6", background: "#fff" }}>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && sendMessage()}
-              placeholder="Type your message..."
-              style={{
-                flex: 1, padding: "10px 14px", fontSize: "13px",
-                borderRadius: "8px", border: "0.5px solid #e8e8e6",
-                background: "#f9f9f8", color: "#1a1a1a", outline: "none"
-              }}
-            />
-            <button onClick={sendMessage} disabled={loading} style={{
-              padding: "10px 18px", background: loading ? "#e0e0e0" : "#1a1a1a",
-              color: loading ? "#999" : "#fff", border: "none",
-              borderRadius: "8px", fontSize: "13px", fontWeight: "500",
-              cursor: loading ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", gap: "6px"
-            }}>
-              <Send size={13} /> Send
-            </button>
+          <div className={`flex items-start gap-[10px] ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+
+            {msg.role === "ai" && (
+              <div className="w-7 h-7 rounded-full bg-[#f3f4f6] border border-[#e8e8e6] flex items-center justify-center text-[10px] font-medium text-[#666] flex-shrink-0">
+                AI
+              </div>
+            )}
+
+            <div
+              className={`
+                max-w-[68%] px-3.5 py-2.5 text-[13px] leading-[1.7] whitespace-pre-wrap
+                ${msg.role === "user"
+                  ? "bg-[#1a1a1a] text-white rounded-tl-[12px] rounded-tr-[0] rounded-br-[12px] rounded-bl-[12px]"
+                  : "bg-[#f9f9f8] text-[#1a1a1a] border border-[#e8e8e6] rounded-tl-[0] rounded-tr-[12px] rounded-br-[12px] rounded-bl-[12px]"
+                }
+              `}
+            >
+              {msg.content}
+            </div>
+
           </div>
         </div>
-      </main>
+      ))}
+
+      {loading && (
+        <div className="flex gap-[10px] items-start">
+
+          <div className="w-7 h-7 rounded-full bg-[#f3f4f6] border border-[#e8e8e6] flex items-center justify-center text-[10px] text-[#666]">
+            AI
+          </div>
+
+          <div className="bg-[#f9f9f8] border border-[#e8e8e6] rounded-tl-[0] rounded-tr-[12px] rounded-br-[12px] rounded-bl-[12px] px-4 py-3 text-[13px] text-[#999]">
+            Thinking...
+          </div>
+
+        </div>
+      )}
+
+      <div ref={bottomRef} />
     </div>
+
+    {/* Input */}
+    <div className="px-7 py-4 border-t border-[#e8e8e6] bg-white">
+
+      <div className="flex gap-[10px] items-center">
+
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && sendMessage()}
+          placeholder="Type your message..."
+          className="flex-1 px-3.5 py-2 text-[13px] rounded-lg border border-[#e8e8e6] bg-[#f9f9f8] text-[#1a1a1a] outline-none"
+        />
+
+        <button
+          onClick={sendMessage}
+          disabled={loading}
+          className={`px-[18px] py-[10px] rounded-lg text-[13px] font-medium flex items-center gap-1
+            ${loading
+              ? "bg-[#e0e0e0] text-[#999] cursor-not-allowed"
+              : "bg-[#1a1a1a] text-white cursor-pointer"
+            }
+          `}
+        >
+          <Send size={13} /> Send
+        </button>
+
+      </div>
+    </div>
+
+  </main>
+</div>
   )
 }

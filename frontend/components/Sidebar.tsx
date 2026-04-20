@@ -13,46 +13,54 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside style={{
-      width: "220px", flexShrink: 0, background: "#fafaf9",
-      borderRight: "0.5px solid #e8e8e6", display: "flex",
-      flexDirection: "column", height: "100vh", position: "fixed", left: 0, top: 0
-    }}>
-      <div style={{ padding: "20px", borderBottom: "0.5px solid #e8e8e6" }}>
-        <div style={{ fontSize: "15px", fontWeight: "500", letterSpacing: "-0.3px" }}>DS Technologies</div>
-        <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>Agent Dashboard</div>
+  <aside className="w-[220px] flex-shrink-0 bg-[#fafaf9] border-r border-[#e8e8e6] flex flex-col h-screen fixed left-0 top-0">
+
+  {/* Header */}
+  <div className="p-5 border-b border-[#e8e8e6]">
+    <div className="text-[15px] font-medium tracking-[-0.3px]">
+      DS Technologies
+    </div>
+    <div className="text-[11px] text-[#999] mt-[2px]">
+      Agent Dashboard
+    </div>
+  </div>
+
+  {/* Navigation */}
+  <nav className="p-3 flex-1">
+    {links.map(({ href, label, icon: Icon }) => (
+      <Link
+        key={href}
+        href={href}
+        className={`
+          flex items-center gap-2 px-3 py-2 rounded-lg mb-[2px] text-[13px] no-underline
+          ${path === href
+            ? "bg-white border border-[#e8e8e6] text-[#1a1a1a] font-medium"
+            : "bg-transparent border border-transparent text-[#888] font-normal"
+          }
+        `}
+      >
+        <Icon size={14} />
+        {label}
+      </Link>
+    ))}
+  </nav>
+
+  {/* Footer User */}
+  <div className="p-4 border-t border-[#e8e8e6]">
+    <div className="flex items-center gap-2">
+
+      <div className="w-7 h-7 rounded-full bg-[#e8f0fe] flex items-center justify-center text-[11px] font-medium text-[#3b5bdb]">
+        CB
       </div>
 
-      <nav style={{ padding: "12px", flex: 1 }}>
-        {links.map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} style={{
-            display: "flex", alignItems: "center", gap: "8px",
-            padding: "8px 12px", borderRadius: "8px", marginBottom: "2px",
-            fontSize: "13px", textDecoration: "none",
-            background: path === href ? "#fff" : "transparent",
-            border: path === href ? "0.5px solid #e8e8e6" : "0.5px solid transparent",
-            color: path === href ? "#1a1a1a" : "#888",
-            fontWeight: path === href ? "500" : "400",
-          }}>
-            <Icon size={14} />
-            {label}
-          </Link>
-        ))}
-      </nav>
-
-      <div style={{ padding: "16px 20px", borderTop: "0.5px solid #e8e8e6" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div style={{
-            width: "28px", height: "28px", borderRadius: "50%",
-            background: "#e8f0fe", display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: "11px", fontWeight: "500", color: "#3b5bdb"
-          }}>CB</div>
-          <div>
-            <div style={{ fontSize: "12px", fontWeight: "500" }}>Bassam</div>
-            <div style={{ fontSize: "10px", color: "#999" }}>Admin</div>
-          </div>
-        </div>
+      <div>
+        <div className="text-[12px] font-medium">Bassam</div>
+        <div className="text-[10px] text-[#999]">Admin</div>
       </div>
-    </aside>
+
+    </div>
+  </div>
+
+</aside>
   )
 }

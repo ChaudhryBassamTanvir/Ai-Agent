@@ -3,312 +3,325 @@ import { useEffect, useState } from "react"
 import Sidebar from "@/components/Sidebar"
 
 type Client = {
-  id: number
-  name: string
-  email: string
-  phone: string
-  company: string
-  channel: string
-  task_count: number
-  created_at: string
-  whatsapp_number: string
-  slack_id: string
+  id: number; name: string; email: string; phone: string
+  company: string; channel: string; task_count: number
+  created_at: string; whatsapp_number: string; slack_id: string
 }
 
-const channelConfig: Record<string, { label: string; bg: string; text: string; border: string; icon: string }> = {
-  whatsapp: { label: "WhatsApp", bg: "#f0fdf4", text: "#15803d", border: "#bbf7d0", icon: "WA" },
-  slack:    { label: "Slack",    bg: "#eff6ff", text: "#1e40af", border: "#bfdbfe", icon: "SL" },
-  web:      { label: "Web",      bg: "#f5f3ff", text: "#6d28d9", border: "#ddd6fe", icon: "WB" },
+const channelCfg: Record<string, { label: string; cls: string; icon: string }> = {
+  whatsapp: { label: "WhatsApp", cls: "bg-green-50 text-green-800 border-green-200",  icon: "WA" },
+  slack:    { label: "Slack",    cls: "bg-blue-50 text-blue-800 border-blue-200",     icon: "SL" },
+  web:      { label: "Web",      cls: "bg-purple-50 text-purple-800 border-purple-200", icon: "WB" },
 }
 
 function Avatar({ name }: { name: string }) {
-  const initials = name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
   return (
-    <div style={{
-      width: "36px", height: "36px", borderRadius: "50%",
-      background: "#e8f0fe", display: "flex", alignItems: "center",
-      justifyContent: "center", fontSize: "12px", fontWeight: "500",
-      color: "#3b5bdb", flexShrink: 0
-    }}>{initials}</div>
+    <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-xs font-medium text-blue-700 flex-shrink-0">
+      {name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+    </div>
   )
 }
 
 function ChannelBadge({ channel }: { channel: string }) {
-  const cfg = channelConfig[channel] || channelConfig.web
-  return (
-    <span style={{
-      fontSize: "11px", padding: "3px 8px", borderRadius: "6px",
-      background: cfg.bg, color: cfg.text, border: `0.5px solid ${cfg.border}`,
-      fontWeight: "500"
-    }}>{cfg.label}</span>
-  )
+  const cfg = channelCfg[channel] || channelCfg.web
+  return <span className={`text-xs px-2 py-1 rounded-md border font-medium ${cfg.cls}`}>{cfg.label}</span>
 }
 
 export default function ClientsPage() {
-  const [clients, setClients]   = useState<Client[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [search,  setSearch]    = useState("")
-  const [filter,  setFilter]    = useState("all")
+  const [clients,  setClients]  = useState<Client[]>([])
+  const [loading,  setLoading]  = useState(true)
+  const [search,   setSearch]   = useState("")
+  const [filter,   setFilter]   = useState("all")
   const [selected, setSelected] = useState<Client | null>(null)
+  const [showAdd,  setShowAdd]  = useState(false)
+  const [newClient, setNewClient] = useState({
+    name: "", email: "", phone: "", company: "",
+    channel: "whatsapp", cgpa: "", degree: "", target_country: ""
+  })
 
-  useEffect(() => {
+  const load = () => {
     fetch("http://127.0.0.1:8000/clients")
       .then(r => r.json())
       .then(data => { setClients(data); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { load() }, [])
 
   const filtered = clients.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) ||
                         c.email.toLowerCase().includes(search.toLowerCase()) ||
                         c.phone.includes(search)
-    const matchFilter = filter === "all" || c.channel === filter
-    return matchSearch && matchFilter
+    return matchSearch && (filter === "all" || c.channel === filter)
   })
 
+  const deleteClient = async (id: number) => {
+    if (!confirm("Delete this client and all their data?")) return
+    await fetch(`http://127.0.0.1:8000/clients/${id}`, { method: "DELETE" })
+    setClients(prev => prev.filter(c => c.id !== id))
+    if (selected?.id === id) setSelected(null)
+  }
+
+  const addClient = async () => {
+    if (!newClient.name) return
+    await fetch("http://127.0.0.1:8000/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newClient)
+    })
+    setShowAdd(false)
+    setNewClient({ name: "", email: "", phone: "", company: "", channel: "whatsapp", cgpa: "", degree: "", target_country: "" })
+    load()
+  }
+
   return (
-    <div style={{ display: "flex" }}>
+    <div className="flex">
       <Sidebar />
-      <main style={{ marginLeft: "220px", flex: 1, minHeight: "100vh", background: "#f9f9f8" }}>
+      <main className="ml-[220px] flex-1 min-h-screen bg-gray-50">
 
         {/* Header */}
-        <div style={{ padding: "28px 36px 0", marginBottom: "24px" }}>
-          <h1 style={{ fontSize: "20px", fontWeight: "500", letterSpacing: "-0.3px", margin: 0 }}>Clients</h1>
-          <p style={{ fontSize: "13px", color: "#999", marginTop: "4px" }}>
-            {clients.length} total clients across all channels
-          </p>
+        <div className="px-9 pt-7 pb-0 mb-6">
+          <h1 className="text-xl font-medium tracking-tight text-gray-900">Clients</h1>
+          <p className="text-sm text-gray-400 mt-1">{clients.length} total clients across all channels</p>
         </div>
 
-        <div style={{ display: "flex", gap: "24px", padding: "0 36px 36px" }}>
+        <div className="flex gap-6 px-9 pb-9">
 
-          {/* Left — client list */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Left */}
+          <div className="flex-1 min-w-0">
 
-            {/* Search + Filter */}
-            <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+            {/* Search + Filter + Add */}
+            <div className="flex gap-2.5 mb-4">
               <input
                 placeholder="Search by name, email or phone..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                style={{
-                  flex: 1, padding: "9px 14px", fontSize: "13px",
-                  borderRadius: "8px", border: "0.5px solid #e8e8e6",
-                  background: "#fff", color: "#1a1a1a", outline: "none"
-                }}
+                className="flex-1 px-3.5 py-2.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-900 outline-none focus:border-gray-400"
               />
-              <select
-                value={filter}
-                onChange={e => setFilter(e.target.value)}
-                style={{
-                  padding: "9px 12px", fontSize: "13px", borderRadius: "8px",
-                  border: "0.5px solid #e8e8e6", background: "#fff",
-                  color: "#1a1a1a", outline: "none", cursor: "pointer"
-                }}
-              >
+              <select value={filter} onChange={e => setFilter(e.target.value)}
+                className="px-3 py-2.5 text-sm rounded-lg border border-gray-200 bg-white text-gray-700 outline-none cursor-pointer">
                 <option value="all">All Channels</option>
                 <option value="whatsapp">WhatsApp</option>
                 <option value="slack">Slack</option>
                 <option value="web">Web</option>
               </select>
+              <button onClick={() => setShowAdd(true)}
+                className="px-4 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors cursor-pointer">
+                + Add Client
+              </button>
             </div>
 
-            {/* Stats row */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "16px" }}>
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2.5 mb-4">
               {[
-                { label: "WhatsApp", value: clients.filter(c => c.channel === "whatsapp").length, ...channelConfig.whatsapp },
-                { label: "Slack",    value: clients.filter(c => c.channel === "slack").length,    ...channelConfig.slack },
-                { label: "Web",      value: clients.filter(c => c.channel === "web").length,      ...channelConfig.web },
+                { label: "WhatsApp", icon: "WA", cls: "bg-green-50 text-green-800 border-green-200",   count: clients.filter(c => c.channel === "whatsapp").length },
+                { label: "Slack",    icon: "SL", cls: "bg-blue-50 text-blue-800 border-blue-200",      count: clients.filter(c => c.channel === "slack").length },
+                { label: "Web",      icon: "WB", cls: "bg-purple-50 text-purple-800 border-purple-200", count: clients.filter(c => c.channel === "web").length },
               ].map(s => (
-                <div key={s.label} style={{
-                  background: "#fff", border: "0.5px solid #e8e8e6",
-                  borderRadius: "10px", padding: "14px 18px",
-                  display: "flex", justifyContent: "space-between", alignItems: "center"
-                }}>
+                <div key={s.label} className="bg-white border border-gray-100 rounded-xl p-4 flex justify-between items-center">
                   <div>
-                    <div style={{ fontSize: "11px", color: "#999", marginBottom: "4px" }}>{s.label}</div>
-                    <div style={{ fontSize: "20px", fontWeight: "500" }}>{s.value}</div>
+                    <div className="text-xs text-gray-400 mb-1">{s.label}</div>
+                    <div className="text-xl font-medium text-gray-900">{s.count}</div>
                   </div>
-                  <span style={{
-                    fontSize: "11px", padding: "3px 8px", borderRadius: "6px",
-                    background: s.bg, color: s.text, border: `0.5px solid ${s.border}`, fontWeight: "500"
-                  }}>{s.icon}</span>
+                  <span className={`text-xs px-2 py-1 rounded-md border font-medium ${s.cls}`}>{s.icon}</span>
                 </div>
               ))}
             </div>
 
-            {/* Client cards */}
-            <div style={{ background: "#fff", border: "0.5px solid #e8e8e6", borderRadius: "10px", overflow: "hidden" }}>
-
-              {/* Table header */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 2fr 1.5fr 1fr 80px",
-                padding: "10px 20px",
-                borderBottom: "0.5px solid #f0f0ef",
-                background: "#f9f9f8"
-              }}>
-                {["Client", "Contact", "Channel ID", "Tasks", "Joined"].map(h => (
-                  <div key={h} style={{ fontSize: "11px", color: "#999", fontWeight: "500", textTransform: "uppercase", letterSpacing: "0.8px" }}>{h}</div>
+            {/* Table */}
+            <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-[2fr_2fr_1.5fr_1fr_80px_60px] px-5 py-2.5 bg-gray-50 border-b border-gray-100">
+                {["Client", "Contact", "Channel ID", "Tasks", "Joined", ""].map(h => (
+                  <div key={h} className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{h}</div>
                 ))}
               </div>
 
               {loading ? (
-                <div style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#bbb" }}>Loading...</div>
+                <div className="py-10 text-center text-sm text-gray-300">Loading...</div>
               ) : filtered.length === 0 ? (
-                <div style={{ padding: "40px", textAlign: "center", fontSize: "13px", color: "#bbb" }}>No clients found.</div>
+                <div className="py-10 text-center text-sm text-gray-300">No clients found.</div>
               ) : filtered.map((client, i) => (
                 <div
                   key={client.id}
                   onClick={() => setSelected(selected?.id === client.id ? null : client)}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 2fr 1.5fr 1fr 80px",
-                    padding: "14px 20px",
-                    borderBottom: i < filtered.length - 1 ? "0.5px solid #f0f0ef" : "none",
-                    cursor: "pointer",
-                    background: selected?.id === client.id ? "#f9f9f8" : "transparent",
-                    transition: "background 0.1s"
-                  }}
+                  className={`grid grid-cols-[2fr_2fr_1.5fr_1fr_80px_60px] px-5 py-3.5 cursor-pointer transition-colors ${selected?.id === client.id ? "bg-gray-50" : "hover:bg-gray-50"} ${i < filtered.length - 1 ? "border-b border-gray-50" : ""}`}
                 >
-                  {/* Name */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div className="flex items-center gap-2.5">
                     <Avatar name={client.name} />
                     <div>
-                      <div style={{ fontSize: "13px", fontWeight: "500", color: "#1a1a1a" }}>{client.name}</div>
-                      <div style={{ fontSize: "11px", color: "#999", marginTop: "1px" }}>{client.company || "—"}</div>
+                      <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                      <div className="text-xs text-gray-400">{client.company || "—"}</div>
                     </div>
                   </div>
 
-                  {/* Contact */}
-                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "3px" }}>
-                    <div style={{ fontSize: "12px", color: "#444" }}>{client.email || "—"}</div>
-                    <div style={{ fontSize: "12px", color: "#999" }}>{client.phone || "—"}</div>
+                  <div className="flex flex-col justify-center gap-1">
+                    <div className="text-xs text-gray-600 truncate">{client.email || "—"}</div>
+                    <div className="text-xs text-gray-400">{client.phone || "—"}</div>
                   </div>
 
-                  {/* Channel-specific ID */}
-                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "4px" }}>
+                  <div className="flex flex-col justify-center gap-1">
                     <ChannelBadge channel={client.channel} />
-                    <div style={{ fontSize: "11px", color: "#999", marginTop: "4px" }}>
-                      {client.channel === "whatsapp" && client.whatsapp_number
-                        ? `+${client.whatsapp_number}`
-                        : client.channel === "slack" && client.slack_id
-                        ? client.slack_id
-                        : "Web visitor"}
+                    <div className="text-xs text-gray-400">
+                      {client.channel === "whatsapp" && client.whatsapp_number ? `+${client.whatsapp_number}` :
+                       client.channel === "slack" && client.slack_id ? client.slack_id : "Web visitor"}
                     </div>
                   </div>
 
-                  {/* Task count */}
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{
-                      fontSize: "12px", padding: "3px 10px", borderRadius: "6px",
-                      background: client.task_count > 0 ? "#f0fdf4" : "#f9f9f8",
-                      color: client.task_count > 0 ? "#15803d" : "#999",
-                      border: `0.5px solid ${client.task_count > 0 ? "#bbf7d0" : "#e8e8e6"}`
-                    }}>
+                  <div className="flex items-center">
+                    <span className={`text-xs px-2.5 py-1 rounded-md border ${client.task_count > 0 ? "bg-green-50 text-green-800 border-green-200" : "bg-gray-50 text-gray-400 border-gray-200"}`}>
                       {client.task_count} task{client.task_count !== 1 ? "s" : ""}
                     </span>
                   </div>
 
-                  {/* Date */}
-                  <div style={{ display: "flex", alignItems: "center", fontSize: "12px", color: "#bbb" }}>
-                    {client.created_at}
+                  <div className="flex items-center text-xs text-gray-300">{client.created_at}</div>
+
+                  <div className="flex items-center" onClick={e => e.stopPropagation()}>
+                    <button
+                      onClick={() => deleteClient(client.id)}
+                      className="text-xs px-2 py-1 rounded-md border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
+                    >Delete</button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right — client detail panel */}
+          {/* Detail panel */}
           {selected && (
-            <div style={{ width: "280px", flexShrink: 0 }}>
-              <div style={{ background: "#fff", border: "0.5px solid #e8e8e6", borderRadius: "10px", overflow: "hidden", position: "sticky", top: "24px" }}>
+            <div className="w-72 flex-shrink-0">
+              <div className="bg-white border border-gray-100 rounded-xl overflow-hidden sticky top-6">
 
-                {/* Panel header */}
-                <div style={{ padding: "20px", borderBottom: "0.5px solid #f0f0ef", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <div className="p-5 border-b border-gray-100 flex justify-between items-start">
+                  <div className="flex gap-3 items-center">
                     <Avatar name={selected.name} />
                     <div>
-                      <div style={{ fontSize: "14px", fontWeight: "500", color: "#1a1a1a" }}>{selected.name}</div>
+                      <div className="text-sm font-medium text-gray-900">{selected.name}</div>
                       <ChannelBadge channel={selected.channel} />
                     </div>
                   </div>
-                  <button
-                    onClick={() => setSelected(null)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#bbb", fontSize: "18px", lineHeight: 1 }}
-                  >×</button>
+                  <button onClick={() => setSelected(null)} className="text-gray-300 hover:text-gray-600 text-lg cursor-pointer bg-transparent border-none">×</button>
                 </div>
 
-                {/* Contact info */}
-                <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #f0f0ef" }}>
-                  <p style={{ fontSize: "10px", color: "#bbb", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 10px", fontWeight: "500" }}>Contact</p>
+                <div className="p-5 border-b border-gray-100">
+                  <p className="text-[10px] text-gray-300 uppercase tracking-widest mb-3 font-medium">Contact</p>
                   {[
                     { label: "Email",   value: selected.email || "—" },
                     { label: "Phone",   value: selected.phone ? `+${selected.phone}` : "—" },
                     { label: "Company", value: selected.company || "—" },
                     { label: "Joined",  value: selected.created_at },
                   ].map(({ label, value }) => (
-                    <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <span style={{ fontSize: "12px", color: "#999" }}>{label}</span>
-                      <span style={{ fontSize: "12px", color: "#1a1a1a", textAlign: "right", maxWidth: "160px", wordBreak: "break-all" }}>{value}</span>
+                    <div key={label} className="flex justify-between mb-2">
+                      <span className="text-xs text-gray-400">{label}</span>
+                      <span className="text-xs text-gray-900 text-right max-w-[160px] break-all">{value}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Channel info */}
-                <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #f0f0ef" }}>
-                  <p style={{ fontSize: "10px", color: "#bbb", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 10px", fontWeight: "500" }}>Channel Details</p>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                    <span style={{ fontSize: "12px", color: "#999" }}>Source</span>
+                <div className="p-5 border-b border-gray-100">
+                  <p className="text-[10px] text-gray-300 uppercase tracking-widest mb-3 font-medium">Channel</p>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-xs text-gray-400">Source</span>
                     <ChannelBadge channel={selected.channel} />
                   </div>
-                  {selected.channel === "whatsapp" && (
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "12px", color: "#999" }}>WA Number</span>
-                      <span style={{ fontSize: "12px", color: "#1a1a1a" }}>+{selected.whatsapp_number}</span>
+                  {selected.channel === "whatsapp" && selected.whatsapp_number && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">WA Number</span>
+                      <span className="text-xs text-gray-900">+{selected.whatsapp_number}</span>
                     </div>
                   )}
-                  {selected.channel === "slack" && (
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "12px", color: "#999" }}>Slack ID</span>
-                      <span style={{ fontSize: "12px", color: "#1a1a1a" }}>{selected.slack_id}</span>
+                  {selected.channel === "slack" && selected.slack_id && (
+                    <div className="flex justify-between">
+                      <span className="text-xs text-gray-400">Slack ID</span>
+                      <span className="text-xs text-gray-900">{selected.slack_id}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Stats */}
-                <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #f0f0ef" }}>
-                  <p style={{ fontSize: "10px", color: "#bbb", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 10px", fontWeight: "500" }}>Activity</p>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontSize: "12px", color: "#999" }}>Total Tasks</span>
-                    <span style={{ fontSize: "12px", fontWeight: "500", color: "#1a1a1a" }}>{selected.task_count}</span>
+                <div className="p-5 border-b border-gray-100">
+                  <p className="text-[10px] text-gray-300 uppercase tracking-widest mb-3 font-medium">Activity</p>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-400">Total Tasks</span>
+                    <span className="text-xs font-medium text-gray-900">{selected.task_count}</span>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{ padding: "16px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <p style={{ fontSize: "10px", color: "#bbb", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 4px", fontWeight: "500" }}>Actions</p>
+                <div className="p-5 flex flex-col gap-2">
+                  <p className="text-[10px] text-gray-300 uppercase tracking-widest mb-1 font-medium">Actions</p>
                   {selected.email && (
-                    <a href={`mailto:${selected.email}`} style={{
-                      display: "block", padding: "9px 14px", textAlign: "center",
-                      background: "#1a1a1a", color: "#fff", borderRadius: "8px",
-                      fontSize: "13px", fontWeight: "500", textDecoration: "none"
-                    }}>Send Email</a>
+                    <a href={`mailto:${selected.email}`}
+                      className="block py-2.5 text-center bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors no-underline">
+                      Send Email
+                    </a>
                   )}
                   {selected.channel === "whatsapp" && selected.whatsapp_number && (
-                    <a href={`https://wa.me/${selected.whatsapp_number}`} target="_blank" rel="noreferrer" style={{
-                      display: "block", padding: "9px 14px", textAlign: "center",
-                      background: "#f0fdf4", color: "#15803d",
-                      border: "0.5px solid #bbf7d0", borderRadius: "8px",
-                      fontSize: "13px", fontWeight: "500", textDecoration: "none"
-                    }}>Open WhatsApp</a>
+                    <a href={`https://wa.me/${selected.whatsapp_number}`} target="_blank" rel="noreferrer"
+                      className="block py-2.5 text-center bg-green-50 text-green-800 border border-green-200 rounded-lg text-sm font-medium hover:bg-green-100 transition-colors no-underline">
+                      Open WhatsApp
+                    </a>
                   )}
+                  <button
+                    onClick={() => deleteClient(selected.id)}
+                    className="py-2.5 text-center bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors cursor-pointer">
+                    Delete Client
+                  </button>
                 </div>
 
               </div>
             </div>
           )}
-
         </div>
+
+        {/* Add Client Modal */}
+        {showAdd && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-7 w-[480px] border border-gray-100 shadow-lg">
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="text-base font-medium text-gray-900">Add New Client</h3>
+                <button onClick={() => setShowAdd(false)} className="text-gray-300 hover:text-gray-600 text-xl bg-transparent border-none cursor-pointer">×</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { key: "name",           label: "Full Name",      placeholder: "Ahmed Khan",           span: true },
+                  { key: "email",          label: "Email",          placeholder: "ahmed@example.com",    span: false },
+                  { key: "phone",          label: "Phone",          placeholder: "+92 300 1234567",      span: false },
+                  { key: "company",        label: "Company",        placeholder: "Company name",         span: false },
+                  { key: "target_country", label: "Target Country", placeholder: "Canada",               span: false },
+                ].map(f => (
+                  <div key={f.key} className={f.span ? "col-span-2" : ""}>
+                    <label className="text-xs text-gray-400 block mb-1.5">{f.label}</label>
+                    <input
+                      placeholder={f.placeholder}
+                      value={(newClient as any)[f.key]}
+                      onChange={e => setNewClient({ ...newClient, [f.key]: e.target.value })}
+                      className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-900 outline-none focus:border-gray-400"
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1.5">Channel</label>
+                  <select value={newClient.channel} onChange={e => setNewClient({ ...newClient, channel: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 bg-gray-50 text-gray-700 outline-none cursor-pointer">
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="slack">Slack</option>
+                    <option value="web">Web</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2.5 mt-5 justify-end">
+                <button onClick={() => setShowAdd(false)}
+                  className="px-4 py-2.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 cursor-pointer bg-transparent">
+                  Cancel
+                </button>
+                <button onClick={addClient}
+                  className="px-4 py-2.5 text-sm bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors cursor-pointer">
+                  Add Client
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   )
