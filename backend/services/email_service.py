@@ -94,7 +94,11 @@ def send_status_update_email(
                   </tr>
                 </table>
 
-                {'<a href="' + trello_url + '" style="display:inline-block;padding:11px 24px;background:#1a1a1a;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500;">View Project on Trello →</a>' if trello_url else ''}
+                # ✅ Replace with this in the html body section:
+              <p style="font-size:14px;color:#666;margin:16px 0 0;line-height:1.7;">
+  Our team is actively working on your project. We will reach out to you directly 
+  if we need any additional information. Thank you for your patience!
+                                </p>
               </td>
             </tr>
 
