@@ -12,6 +12,9 @@ ADMIN_EMAIL    = "admin@dstech.io"
 ADMIN_PASSWORD = "dstech@2024"          # plain-text for dev — hash in production
 # ────────────────────────────────────────────────
 
+# from services.auth import hash_password
+
+
 
 def seed():
     init_db()

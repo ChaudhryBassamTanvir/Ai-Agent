@@ -8,6 +8,7 @@ from services.langchain_agent import run_agent
 from services.whatsapp_bot import send_whatsapp_message
 from services.email_service import send_status_update_email
 from services.trello_service import move_trello_card
+from api.routes.auth import router as auth_router
 from db.database import (
     Base, engine, init_db,
     get_all_tasks, get_all_clients, get_dashboard_stats,
@@ -21,6 +22,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -205,3 +207,19 @@ async def trello_webhook(request: Request):
     except Exception as e:
         print(f"❌ Trello webhook error: {e}")
     return {"status": "ok"}
+
+
+@app.post("/auth/login")
+async def login(data: dict):
+    email    = data.get("email", "").strip()
+    password = data.get("password", "").strip()
+    token, user, error = login_user(email, password)
+    if error:
+        raise HTTPException(status_code=401, detail=error)
+    return {
+        "token":    token,
+        "name":     user["name"],
+        "email":    user["email"],
+        "is_admin": True,
+    }
+
