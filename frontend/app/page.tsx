@@ -32,13 +32,13 @@ export default function Home() {
           {/* CTA Buttons */}
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
-              href="/chat"
+              href="/signin"
               className="px-5 py-2.5 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition shadow-sm"
             >
               Open Chat →
             </Link>
             <Link
-              href="/dashboard"
+              href="/signin"
               className="px-5 py-2.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition"
             >
               View Dashboard
@@ -175,7 +175,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-white tracking-tight mb-3">Ready to automate?</h2>
             <p className="text-gray-400 mb-8 text-base">Start managing clients smarter. Free to try, no setup required.</p>
             <Link
-              href="/chat"
+              href="/signin"
               className="inline-block px-6 py-3 bg-white text-gray-900 text-sm font-semibold rounded-lg hover:bg-gray-100 transition"
             >
               Open Chat →

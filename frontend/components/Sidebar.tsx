@@ -9,7 +9,7 @@ export default function Sidebar() {
   const links = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/clients",   label: "Clients",   icon: Users },
-    { href: "/chat",      label: "AI Chat",      icon: MessageSquare },
+    { href: "/chat",      label: " Test AI Chat",      icon: MessageSquare },
   ]
 
   return (

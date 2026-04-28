@@ -51,7 +51,7 @@ export default function Navbar() {
               Sign in
             </Link>
             <Link
-              href="/chat"
+              href="/signin"
               className="px-3.5 py-1.5 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-all shadow-sm font-medium"
             >
               Get started →
