@@ -68,21 +68,36 @@ async def get_stats():
 async def update_task(task_id: int, data: dict):
     new_status = data.get("status", "pending")
 
+    # 1. Update DB
     update_task_status(task_id, new_status)
+    print(f"✅ Task {task_id} status updated to: {new_status}")
 
+    # 2. Sync Trello
     trello_url = get_task_trello_url(task_id)
     if trello_url:
         move_trello_card(trello_url, new_status)
 
+    # 3. Email client
     task = get_task_with_client(task_id)
-    if task and task.get("client_email"):
-        send_status_update_email(
-            client_name=task["client_name"],
-            client_email=task["client_email"],
-            task_description=task["description"],
-            new_status=new_status,
-            trello_url=task.get("trello_url", "")
-        )
+    print(f"🔍 Task with client: {task}")
+
+    if task:
+        client_email = task.get("client_email", "")
+        print(f"📧 Client email: '{client_email}'")
+
+        if client_email:
+            print(f"📤 Sending status email to {client_email}...")
+            send_status_update_email(
+                client_name=task["client_name"],
+                client_email=client_email,
+                task_description=task["description"],
+                new_status=new_status,
+                trello_url=task.get("trello_url", "")
+            )
+        else:
+            print(f"⚠️ No client email found for task {task_id} — skipping email")
+    else:
+        print(f"⚠️ No task found with id {task_id}")
 
     return {"success": True}
 
@@ -208,18 +223,7 @@ async def trello_webhook(request: Request):
         print(f"❌ Trello webhook error: {e}")
     return {"status": "ok"}
 
-
-@app.post("/auth/login")
-async def login(data: dict):
-    email    = data.get("email", "").strip()
-    password = data.get("password", "").strip()
-    token, user, error = login_user(email, password)
-    if error:
-        raise HTTPException(status_code=401, detail=error)
-    return {
-        "token":    token,
-        "name":     user["name"],
-        "email":    user["email"],
-        "is_admin": True,
-    }
-
+@app.get("/debug/task/{task_id}")
+async def debug_task(task_id: int):
+    task = get_task_with_client(task_id)
+    return task
